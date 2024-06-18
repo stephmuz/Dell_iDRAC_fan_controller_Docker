@@ -13,6 +13,18 @@ trap 'gracefull_exit' SIGQUIT SIGKILL SIGTERM
 
 # readonly DELL_FRESH_AIR_COMPLIANCE=45
 
+# constantes PID et debug PID
+consigne=40
+Kp=1
+Ki=0.5
+Kd=0.2
+debug=1
+
+
+
+
+
+
 # Check if FAN_SPEED variable is in hexadecimal format. If not, convert it to hexadecimal
 if [[ $FAN_SPEED == 0x* ]]
 then
@@ -81,6 +93,11 @@ if ! $IS_EXHAUST_TEMPERATURE_SENSOR_PRESENT || ! $IS_CPU2_TEMPERATURE_SENSOR_PRE
 then
   echo ""
 fi
+
+# erreur initiale pour le calcul PID
+erreur=0
+# initialisation de la variable
+erreur_precedente=0
 
 # Start monitoring
 while true; do
