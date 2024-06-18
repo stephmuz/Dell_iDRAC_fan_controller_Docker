@@ -6,6 +6,23 @@ function apply_Dell_fan_control_profile () {
   CURRENT_FAN_CONTROL_PROFILE="Dell default dynamic fan control profile"
 }
 
+# this function implements PID regulation
+function compute () {
+  puissance=`ipmitool sdr type current | awk 'BEGIN { FS="|" } /Pwr/ {split($5,tab," ");print tab[1]}'`
+  mesure=`ipmitool sdr type temperature | awk -f temp.awk`
+  debug && echo -n "mesure=$mesure degrés ->($consigne) "
+  #echo $mesure
+  erreur=$(($mesure - $consigne))
+  somme_erreurs=$(($somme_erreurs + $erreur))
+  variation_erreur=$(($erreur - $erreur_precedente))
+  debug && echo -n "($puissance w/154w)*(($Kp * $erreur°c) + ($Ki * $somme_erreurs°c) + ($Kd * $variation_erreur°c)) = "
+  commande=`echo "($puissance/154)*(($Kp * $erreur) + ($Ki * $somme_erreurs) + ($Kd * $variation_erreur))" | bc -l`
+  [ `echo "$commande < 0" | bc` -ne 0 ] && commande=0
+  HEXADECIMAL_FAN_SPEED=$(printf '0x%02x' ${commande%%.*})
+  debug && echo $HEXADECIMAL_FAN_SPEED
+  erreur_precedente=$erreur
+}
+
 # This function applies a user-specified static fan control profile
 function apply_user_fan_control_profile () {
   # Use ipmitool to send the raw command to set fan control to user-specified value
